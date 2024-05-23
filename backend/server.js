@@ -1,5 +1,6 @@
 import express from "express";
 import "dotenv/config";
+import cors from "cors";
 
 import { mongoConfig } from "./config.js";
 
@@ -8,6 +9,7 @@ import todoRouters from "./routes/todoRoutes.js";
 const port = 8080;
 
 const app = express();
+app.use(cors());
 app.use(express.json());
 
 app.use("/api/todos", todoRouters);
