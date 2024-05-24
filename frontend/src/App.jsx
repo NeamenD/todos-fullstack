@@ -47,6 +47,8 @@ function App() {
       });
       const newTodo = await response.json();
       setTodos([...todos, newTodo]);
+      textRef.current.value = "";
+      completeRef.current.checked = false;
     } catch (err) {
       console.log(err);
     } finally {
