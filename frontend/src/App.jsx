@@ -1,65 +1,114 @@
-import { useEffect, useRef, useState } from "react";
+import { useState, useRef, useEffect } from "react";
+
 import "./App.css";
 
+const BASE_URL = "http://localhost:8080/api/todos";
+
 function App() {
+  const [isLoading, setIsLoading] = useState(false);
   const [todos, setTodos] = useState([]);
 
   useEffect(() => {
     async function getTodos() {
       try {
-        const response = await fetch("http://localhost:8080/api/todos");
+        setIsLoading(true);
+        const response = await fetch(BASE_URL);
         const data = await response.json();
+        console.log(data);
         setTodos(data);
-      } catch (error) {
-        console.log(error);
+      } catch (err) {
+        console.log(err);
+      } finally {
+        setIsLoading(false);
       }
     }
     getTodos();
   }, []);
+
   const textRef = useRef();
   const completeRef = useRef();
 
   async function handleSubmit(e) {
     e.preventDefault();
-    const newTodo = {
-      id: todos.length + 1, // Generate a new unique ID
+    const body = {
       text: textRef.current.value,
-      complete: completeRef.current.checked,
-      user: "unknown", // Default user value (you can change this as needed)
+      completed: completeRef.current.checked,
+      user: "bob",
     };
-    setTodos([...todos, newTodo]);
-    textRef.current.value = ""; // Clear the input field after submission
-    completeRef.current.checked = false; // Uncheck the checkbox after submission
+    console.log(body, JSON.stringify(body));
+    try {
+      setIsLoading(true);
+      const response = await fetch(BASE_URL, {
+        method: "POST",
+        body: JSON.stringify(body),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      const newTodo = await response.json();
+      setTodos([...todos, newTodo]);
+    } catch (err) {
+      console.log(err);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function handleDelete(id) {
+    try {
+      setIsLoading(true);
+      await fetch(`${BASE_URL}/${id}`, {
+        method: "DELETE",
+      });
+      setTodos(todos.filter((todo) => todo._id !== id));
+    } catch (err) {
+      console.log(err);
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
-    <div>
-      <h1>Todo</h1>
+    <>
+      <h1>Todos</h1>
       <form onSubmit={handleSubmit}>
         <label>
           I want to:
-          <input type="text" ref={textRef} required />
+          <br />
+          <input type="text" ref={textRef} />
         </label>
         <label>
-          Complete:
           <input type="checkbox" ref={completeRef} />
         </label>
-        <div>
-          <br />
-          <button type="submit">ADD Todo</button>
-        </div>
+        <br />
+        <br />
+        <button>Add Todo</button>
       </form>
-      <div>
-        {todos.map((todo) => (
+      <br />
+      <br />
+      {isLoading ? (
+        <p>Loading...</p>
+      ) : (
+        todos.map((todo) => (
           <p
-            key={todo.id}
-            style={{ textDecoration: todo.complete ? "line-through" : "none" }}
+            style={{ textDecoration: todo.completed ? "line-through" : "" }}
+            key={todo._id}
           >
             {todo.text}
+            <span
+              onClick={() => handleDelete(todo._id)}
+              style={{
+                marginLeft: "15px",
+                fontWeight: "500",
+                cursor: "pointer",
+              }}
+            >
+              X
+            </span>
           </p>
-        ))}
-      </div>
-    </div>
+        ))
+      )}
+    </>
   );
 }
 
